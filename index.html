@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Harbin Trip ❄️</title>
+    
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'nook-bg': '#F7F4EB', 
+                        'nook-card': '#FFFFFF',
+                        'nook-green': '#8DD6B2', 
+                        'nook-blue': '#8BC6EC', 
+                        'nook-brown': '#5A4D41', 
+                        'nook-orange': '#F5A623',
+                        'nook-shadow': '#E0E5D5',
+                    },
+                    fontFamily: {
+                        'rounded': ['"M PLUS Rounded 1c"', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'hard': '4px 4px 0px #E0E5D5',
+                        'hard-sm': '2px 2px 0px #E0E5D5',
+                        'hard-hover': '2px 2px 0px #E0E5D5',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #F7F4EB;
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            color: #5A4D41;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .header-curve {
+            border-bottom-left-radius: 40px;
+            border-bottom-right-radius: 40px;
+            overflow: hidden;
+            position: relative;
+            z-index: 10;
+        }
+
+        .edit-input {
+            border: 2px solid #E0E5D5;
+            border-radius: 12px;
+            padding: 4px 8px;
+            width: 100%;
+            background: #FAFAFA;
+            color: #5A4D41;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .edit-input:focus { border-color: #8DD6B2; }
+
+        .btn-press:active {
+            transform: scale(0.98) translate(2px, 2px);
+            box-shadow: 2px 2px 0px rgba(0,0,0,0) !important;
+        }
+        
+        .bottom-nav {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding-bottom: env(safe-area-inset-bottom);
+            z-index: 50;
+            border-top-left-radius: 24px;
+            border-top-right-radius: 24px;
+            box-shadow: 0px -4px 10px rgba(0,0,0,0.05);
+        }
+
+        /* 儲存提示動畫 */
+        .save-toast {
+            animation: fadeInOut 2s ease-in-out forwards;
+        }
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateY(20px); }
+            10% { opacity: 1; transform: translateY(0); }
+            80% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-10px); }
+        }
+    </style>
+</head>
+<body>
+
+<div id="app" class="pb-24 min-h-screen relative">
+    
+    <div v-if="showSaveToast" class="fixed top-4 left-1/2 transform -translate-x-1/2 bg-nook-brown text-white px-4 py-2 rounded-full shadow-lg z-50 text-sm font-bold flex items-center save-toast">
+        <i class="fa-solid fa-floppy-disk mr-2"></i> 已自動儲存
+    </div>
+
+    <div class="bg-nook-blue header-curve pb-12 shadow-hard relative">
+        <div class="absolute inset-0 bg-cover bg-center opacity-40" style="background-image: url('https://images.unsplash.com/photo-1548238128-444857218319?q=80&w=1000&auto=format&fit=crop');"></div>
+        <div class="relative pt-12 px-6">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h1 class="text-3xl font-bold text-white drop-shadow-md">哈爾濱之旅 ❄️</h1>
+                    <p class="text-white font-bold opacity-90 mt-1">Dec 23 - Dec 28, 2025</p>
+                </div>
+                <div class="bg-white/90 backdrop-blur rounded-2xl p-2 px-3 shadow-hard-sm text-center">
+                    <p class="text-xs text-nook-brown font-bold">倒數</p>
+                    <p class="text-xl font-bold text-nook-blue">{{ daysUntil }}<span class="text-xs">天</span></p>
+                </div>
+            </div>
+            
+            <div class="mt-6 flex space-x-3 overflow-x-auto hide-scrollbar pb-2">
+                <div class="bg-white/90 p-2 rounded-xl min-w-[80px] text-center shadow-hard-sm flex-shrink-0">
+                    <i class="fa-solid fa-snowflake text-nook-blue mb-1"></i>
+                    <div class="text-xs font-bold">-15°C</div>
+                    <div class="text-[10px] text-gray-500">哈爾濱</div>
+                </div>
+                <div class="bg-white/90 p-2 rounded-xl min-w-[80px] text-center shadow-hard-sm flex-shrink-0">
+                    <i class="fa-solid fa-cloud text-gray-400 mb-1"></i>
+                    <div class="text-xs font-bold">-18°C</div>
+                    <div class="text-[10px] text-gray-500">長白山</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="relative -mt-8 px-4 z-20">
+        
+        <div v-if="currentTab === 'schedule'">
+            <div class="flex space-x-3 overflow-x-auto hide-scrollbar mb-6 py-2">
+                <div v-for="(day, index) in schedule" :key="index" 
+                     @click="selectedDayIndex = index"
+                     :class="['flex-shrink-0 w-16 h-20 rounded-2xl flex flex-col items-center justify-center transition-all cursor-pointer border-2', 
+                              selectedDayIndex === index ? 'bg-nook-orange border-nook-orange text-white shadow-hard' : 'bg-white border-transparent shadow-hard-sm']">
+                    <span class="text-xs font-bold">{{ day.dateStr }}</span>
+                    <span class="text-xl font-bold mt-1">{{ day.dayNum }}</span>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-xl font-bold pl-2 border-l-4 border-nook-orange">{{ currentDaySchedule.title }}</h2>
+                    <button @click="toggleEditMode" class="text-sm bg-white px-3 py-1 rounded-full shadow-hard-sm active:scale-95 text-nook-brown font-bold">
+                        <i :class="isEditMode ? 'fa-solid fa-check text-green-500' : 'fa-solid fa-pen'"></i> 
+                        {{ isEditMode ? '完成' : '修改' }}
+                    </button>
+                </div>
+
+                <div v-for="(item, idx) in currentDaySchedule.events" :key="idx" 
+                     class="bg-white rounded-3xl p-5 shadow-hard border-2 border-transparent hover:border-nook-blue/20 transition-all relative overflow-hidden group">
+                    <div class="absolute left-0 top-0 bottom-0 w-3" :class="getCategoryColor(item.type)"></div>
+                    <div class="pl-2">
+                        <div class="flex justify-between items-center mb-2">
+                            <div class="flex items-center space-x-2">
+                                <span class="bg-gray-100 text-gray-600 text-xs font-bold px-2 py-1 rounded-lg">
+                                    <input v-if="isEditMode" v-model="item.time" class="edit-input w-20">
+                                    <span v-else>{{ item.time }}</span>
+                                </span>
+                                <span class="text-xs font-bold px-2 py-1 rounded-lg text-white" :class="getCategoryColor(item.type)">
+                                    {{ item.typeText }}
+                                </span>
+                            </div>
+                            <a :href="getGoogleMapsLink(item.location)" target="_blank" class="w-8 h-8 rounded-full bg-nook-bg flex items-center justify-center shadow-hard-sm active:scale-90">
+                                <i class="fa-solid fa-location-arrow text-nook-brown text-xs"></i>
+                            </a>
+                        </div>
+
+                        <div class="mb-1">
+                            <input v-if="isEditMode" v-model="item.title" class="edit-input font-bold text-lg mb-1">
+                            <h3 v-else class="text-lg font-bold text-nook-brown">{{ item.title }}</h3>
+                        </div>
+
+                        <div class="flex items-center text-gray-500 text-sm mb-2">
+                            <i class="fa-solid fa-map-pin mr-1 w-4"></i>
+                            <input v-if="isEditMode" v-model="item.location" class="edit-input">
+                            <span v-else>{{ item.location }}</span>
+                        </div>
+
+                        <div v-if="item.note || item.cost || isEditMode" class="bg-nook-bg/50 p-3 rounded-xl text-sm mt-3">
+                            <div class="mb-1 flex items-start">
+                                <span class="font-bold mr-1 mt-1">📝</span>
+                                <textarea v-if="isEditMode" v-model="item.note" class="edit-input h-16"></textarea>
+                                <span v-else>{{ item.note }}</span>
+                            </div>
+                            <div class="text-nook-orange font-bold flex items-center">
+                                <span class="mr-1">💰</span>
+                                <input v-if="isEditMode" v-model="item.cost" class="edit-input w-24">
+                                <span v-else>{{ item.cost }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="h-12"></div>
+        </div>
+
+        <div v-if="currentTab === 'bookings'" class="space-y-4">
+            <h2 class="text-xl font-bold mb-4 pl-2 border-l-4 border-nook-blue">機票與住宿</h2>
+            <div v-for="(flight, i) in bookings.flights" :key="i" class="bg-white rounded-3xl shadow-hard overflow-hidden">
+                <div class="bg-nook-blue/20 p-3 flex justify-between items-center border-b border-dashed border-gray-300">
+                    <span class="font-bold text-nook-blue"><i class="fa-solid fa-plane-up mr-2"></i>登機證</span>
+                    <span class="text-xs text-gray-500 font-bold">{{ flight.date }}</span>
+                </div>
+                <div class="p-5">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="text-center">
+                            <div class="text-2xl font-bold">{{ flight.fromCode }}</div>
+                            <div class="text-xs text-gray-500">{{ flight.fromCity }}</div>
+                        </div>
+                        <div class="flex-1 px-4 text-center">
+                            <i class="fa-solid fa-plane text-gray-300 transform rotate-90"></i>
+                            <div class="h-[1px] bg-gray-300 w-full my-1"></div>
+                            <div class="text-[10px] text-gray-400">{{ flight.duration }}</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold">{{ flight.toCode }}</div>
+                            <div class="text-xs text-gray-500">{{ flight.toCity }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-for="(hotel, i) in bookings.hotels" :key="'h'+i" class="bg-white rounded-3xl shadow-hard p-4 flex gap-4">
+                <div class="w-20 h-20 bg-gray-200 rounded-2xl flex-shrink-0 bg-cover bg-center" 
+                     style="background-image: url('https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=200')">
+                </div>
+                <div class="flex-1">
+                    <h3 class="font-bold text-md leading-tight mb-1">{{ hotel.name }}</h3>
+                    <p class="text-xs text-gray-500 mb-2">{{ hotel.address }}</p>
+                    <div class="flex justify-between items-end">
+                        <span class="text-xs bg-nook-green/20 text-nook-green px-2 py-1 rounded-lg font-bold">{{ hotel.nights }} 晚</span>
+                        <span class="font-bold text-nook-orange text-sm">{{ hotel.price }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="currentTab === 'expense'" class="space-y-4">
+            <div class="bg-white rounded-3xl p-6 shadow-hard text-center">
+                <p class="text-sm text-gray-500 mb-1">總支出 (預估)</p>
+                <h2 class="text-4xl font-bold text-nook-brown mb-2">¥ 8,450</h2>
+                <div class="flex justify-center space-x-2 text-xs font-bold text-gray-400">
+                    <span class="bg-gray-100 px-2 py-1 rounded-full">TWD ~37,500</span>
+                    <span class="bg-gray-100 px-2 py-1 rounded-full">MOP ~9,600</span>
+                </div>
+            </div>
+            <div class="flex justify-between items-center mt-6">
+                <h3 class="font-bold text-lg">最近支出</h3>
+                <button class="w-8 h-8 bg-nook-orange text-white rounded-full shadow-hard-sm flex items-center justify-center">
+                    <i class="fa-solid fa-plus"></i>
+                </button>
+            </div>
+            <div class="space-y-3">
+                <div class="bg-white rounded-2xl p-3 shadow-hard-sm flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-500">
+                            <i class="fa-solid fa-train"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-sm">火車: 珠海-長春</div>
+                            <div class="text-[10px] text-gray-400">12/23 • 公費</div>
+                        </div>
+                    </div>
+                    <div class="font-bold text-nook-brown">¥ 1,140</div>
+                </div>
+            </div>
+        </div>
+
+         <div v-if="currentTab === 'planning'" class="space-y-4">
+            <h2 class="text-xl font-bold mb-4 pl-2 border-l-4 border-nook-green">行李清單</h2>
+            
+            <div class="bg-white rounded-3xl shadow-hard p-5 mb-8">
+                <div class="space-y-3">
+                    <label class="flex items-center space-x-3 cursor-pointer">
+                        <input type="checkbox" class="w-5 h-5 rounded-md border-2 border-gray-300 text-nook-green focus:ring-nook-green">
+                        <span class="text-sm font-bold">極暖發熱衣 x3</span>
+                    </label>
+                    <label class="flex items-center space-x-3 cursor-pointer">
+                        <input type="checkbox" checked class="w-5 h-5 rounded-md border-2 border-gray-300 text-nook-green focus:ring-nook-green">
+                        <span class="text-sm font-bold line-through text-gray-400">暖暖包 (貼式)</span>
+                    </label>
+                </div>
+            </div>
+
+            <h2 class="text-xl font-bold mb-4 pl-2 border-l-4 border-gray-400">資料管理</h2>
+            <div class="bg-white rounded-3xl shadow-hard p-5 text-center">
+                <p class="text-xs text-gray-400 mb-3">如果不小心改錯了，可以點擊下方按鈕恢復原本的行程表。</p>
+                <button @click="resetData" class="bg-red-100 text-red-500 font-bold py-2 px-4 rounded-xl text-sm w-full active:scale-95 transition">
+                    <i class="fa-solid fa-rotate-left mr-1"></i> 重置回預設資料
+                </button>
+            </div>
+            <div class="h-12"></div>
+        </div>
+
+    </div>
+
+    <div class="bottom-nav flex justify-around items-center px-2 py-3 text-[10px] font-bold text-gray-400">
+        <button @click="currentTab = 'schedule'" :class="['flex flex-col items-center w-1/5 btn-press transition', currentTab === 'schedule' ? 'text-nook-orange scale-110' : '']">
+            <i class="fa-solid fa-calendar-day text-xl mb-1"></i>
+            行程
+        </button>
+        <button @click="currentTab = 'bookings'" :class="['flex flex-col items-center w-1/5 btn-press transition', currentTab === 'bookings' ? 'text-nook-blue scale-110' : '']">
+            <i class="fa-solid fa-ticket text-xl mb-1"></i>
+            預訂
+        </button>
+        <button @click="currentTab = 'expense'" :class="['flex flex-col items-center w-1/5 btn-press transition', currentTab === 'expense' ? 'text-nook-green scale-110' : '']">
+            <i class="fa-solid fa-wallet text-xl mb-1"></i>
+            記帳
+        </button>
+        <button @click="currentTab = 'planning'" :class="['flex flex-col items-center w-1/5 btn-press transition', currentTab === 'planning' ? 'text-pink-400 scale-110' : '']">
+            <i class="fa-solid fa-suitcase text-xl mb-1"></i>
+            準備
+        </button>
+    </div>
+
+</div>
+
+<script>
+    const { createApp, ref, computed, watch, onMounted } = Vue;
+
+    // 預設資料 (Hardcoded from PDF)
+    const DEFAULT_SCHEDULE = [
+        {
+            dateStr: '12/23', dayNum: 'D1', title: '出發前往長春',
+            events: [
+                { time: '09:15', type: 'flight', typeText: '飛機', title: '珠海金灣 -> 長春龍嘉', location: '珠海金灣機場', note: 'CZ3739 / T2 航廈', cost: '¥ 1140' },
+                { time: '16:37', type: 'transport', typeText: '高鐵', title: '龍嘉站 -> 長白山站', location: '龍嘉站', note: 'C1315', cost: '¥ 122.5' },
+                { time: '19:00', type: 'hotel', typeText: '住宿', title: '二道白河亞朵酒店', location: '長白山北坡集散中心', note: '含早餐', cost: '997 mop' }
+            ]
+        },
+        {
+            dateStr: '12/24', dayNum: 'D2', title: '長白山天池',
+            events: [
+                { time: '07:00', type: 'sight', typeText: '景點', title: '長白山北坡魔鬼漂流', location: '長白山北景區', note: '需早起排隊', cost: '¥ 88' },
+                { time: '10:00', type: 'sight', typeText: '景點', title: '天池、瀑布、聚龍溫泉群', location: '長白山天池', note: '視天氣情況開放', cost: '¥ 305 (套票)' },
+                { time: '18:44', type: 'transport', typeText: '高鐵', title: '長白山站 -> 延吉', location: '長白山站', note: '候補中', cost: '¥ 95' },
+                { time: '21:00', type: 'food', typeText: '晚餐', title: '百舖樂核桃烤串', location: '延吉', note: '必吃！', cost: '' },
+                { time: '21:30', type: 'hotel', typeText: '住宿', title: '延吉紅菊酒店', location: '延吉市', note: '', cost: '646 mop' }
+            ]
+        },
+        {
+            dateStr: '12/25', dayNum: 'D3', title: '延吉一日遊',
+            events: [
+                { time: '06:00', type: 'food', typeText: '早餐', title: '水上市場早市', location: '延吉水上市場', note: '江小炸、打糕', cost: '' },
+                { time: '09:30', type: 'food', typeText: '午餐', title: '震海貝烤貝', location: '延吉', note: '已預約', cost: '' },
+                { time: '13:00', type: 'sight', typeText: '景點', title: '朝鮮族民俗園', location: '朝鮮族民俗園', note: '拍照行程', cost: '' },
+                { time: '16:53', type: 'transport', typeText: '高鐵', title: '延吉西站 -> 哈爾濱西站', location: '延吉西站', note: '', cost: '¥ 379' },
+                { time: '21:30', type: 'hotel', typeText: '住宿', title: '哈爾濱悅楓酒店', location: '中央大街地鐵站', note: '近索菲亞教堂', cost: '1696 mop' }
+            ]
+        },
+        {
+            dateStr: '12/26', dayNum: 'D4', title: '冰雪大世界',
+            events: [
+                { time: '10:00', type: 'sight', typeText: '景點', title: '松花江大橋', location: '松花江大橋', note: '步行遊覽', cost: '' },
+                { time: '14:00', type: 'sight', typeText: '景點', title: '冰雪大世界', location: '冰雪大世界', note: '下午進場看夕陽+夜景', cost: '' },
+                { time: '19:00', type: 'hotel', typeText: '住宿', title: '哈爾濱悅楓酒店', location: '中央大街', note: '續住', cost: '-' }
+            ]
+        },
+        {
+            dateStr: '12/27', dayNum: 'D5', title: '哈爾濱市區',
+            events: [
+                { time: '09:00', type: 'food', typeText: '市場', title: '道里菜市場', location: '道里菜市場', note: '買特產', cost: '' },
+                { time: '11:00', type: 'sight', typeText: '景點', title: '索菲亞大教堂', location: '索菲亞大教堂', note: '', cost: '' },
+                { time: '14:00', type: 'sight', typeText: '景點', title: '中央大街', location: '中央大街', note: '馬迭爾冰棍', cost: '' },
+                { time: '17:00', type: 'transport', typeText: '高鐵', title: '哈爾濱西 -> 長春西', location: '哈爾濱西站', note: '', cost: '' },
+                { time: '20:00', type: 'hotel', typeText: '住宿', title: '吉大一院亞朵酒店', location: '長春文化廣場', note: '', cost: '303 mop' }
+            ]
+        },
+        {
+            dateStr: '12/28', dayNum: 'D6', title: '返程',
+            events: [
+                { time: '09:00', type: 'sight', typeText: '景點', title: '淨月潭國家森林公園', location: '淨月潭', note: '', cost: '' },
+                { time: '13:00', type: 'sight', typeText: '景點', title: '偽滿皇宮博物館', location: '偽滿皇宮', note: '', cost: '' },
+                { time: '19:15', type: 'flight', typeText: '飛機', title: '長春龍嘉 -> 珠海金灣', location: '長春龍嘉機場', note: 'T2', cost: '' }
+            ]
+        }
+    ];
+
+    createApp({
+        setup() {
+            const currentTab = ref('schedule');
+            const selectedDayIndex = ref(0);
+            const isEditMode = ref(false);
+            const showSaveToast = ref(false);
+
+            // Reactive Data
+            const schedule = ref([]);
+            const bookings = ref({
+                flights: [
+                    { date: '12/23', fromCode: 'ZUH', fromCity: '珠海', toCode: 'CGQ', toCity: '長春', depTime: '09:15', arrTime: '15:25', duration: '6h 10m', flightNo: 'CZ3739' },
+                    { date: '12/28', fromCode: 'CGQ', fromCity: '長春', toCode: 'ZUH', toCity: '珠海', depTime: '19:15', arrTime: '23:55', duration: '5h 40m', flightNo: 'CZxxxx' }
+                ],
+                hotels: [
+                    { name: '二道白河亞朵酒店', address: '長白山北坡集散中心', nights: 1, price: 'MOP 997' },
+                    { name: '延吉紅菊酒店', address: '延吉市中心', nights: 1, price: 'MOP 646' },
+                    { name: '哈爾濱悅楓酒店', address: '中央大街/索菲亞教堂', nights: 2, price: 'MOP 1,696' }
+                ]
+            });
+
+            // 初始化與讀取 LocalStorage
+            onMounted(() => {
+                const savedSchedule = localStorage.getItem('harbin_schedule_v1');
+                if (savedSchedule) {
+                    schedule.value = JSON.parse(savedSchedule);
+                } else {
+                    // 若無儲存資料，使用預設值
+                    schedule.value = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
+                }
+            });
+
+            // 監聽變更並自動儲存
+            watch(schedule, (newVal) => {
+                localStorage.setItem('harbin_schedule_v1', JSON.stringify(newVal));
+            }, { deep: true });
+
+            // 倒數計時
+            const daysUntil = computed(() => {
+                const target = new Date('2025-12-23');
+                const today = new Date();
+                const diff = target - today;
+                return Math.ceil(diff / (1000 * 60 * 60 * 24));
+            });
+
+            const currentDaySchedule = computed(() => {
+                return schedule.value[selectedDayIndex.value] || {};
+            });
+
+            const getCategoryColor = (type) => {
+                const map = {
+                    'flight': 'bg-nook-blue border-nook-blue',
+                    'transport': 'bg-blue-400 border-blue-400',
+                    'hotel': 'bg-purple-400 border-purple-400',
+                    'sight': 'bg-nook-green border-nook-green',
+                    'food': 'bg-nook-orange border-nook-orange'
+                };
+                return map[type] || 'bg-gray-400 border-gray-400';
+            };
+
+            const getGoogleMapsLink = (location) => {
+                return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`;
+            };
+
+            const toggleEditMode = () => {
+                isEditMode.value = !isEditMode.value;
+                if (!isEditMode.value) {
+                    // 觸發儲存提示
+                    showSaveToast.value = true;
+                    setTimeout(() => showSaveToast.value = false, 2000);
+                }
+            };
+
+            // 重置功能
+            const resetData = () => {
+                if(confirm('確定要刪除所有修改，恢復成原始 PDF 的行程嗎？')) {
+                    schedule.value = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
+                    localStorage.removeItem('harbin_schedule_v1');
+                    alert('已恢復預設資料！');
+                }
+            };
+
+            return {
+                currentTab,
+                selectedDayIndex,
+                schedule,
+                bookings,
+                currentDaySchedule,
+                daysUntil,
+                isEditMode,
+                showSaveToast,
+                getCategoryColor,
+                getGoogleMapsLink,
+                toggleEditMode,
+                resetData
+            };
+        }
+    }).mount('#app');
+</script>
+
+</body>
+</html>
